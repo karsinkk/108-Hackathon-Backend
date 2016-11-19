@@ -25,7 +25,7 @@ func main() {
 	router.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./108-Hackathon-Website/")))).Methods("GET")
 	router.HandleFunc("/api", handleAppPost).Methods("POST")
 	http.Handle("/", router)
-	http.ListenAndServe(":80", router)
+	http.ListenAndServe(":8080", router)
 }
 
 func handleAppGet(res http.ResponseWriter, req *http.Request) {
