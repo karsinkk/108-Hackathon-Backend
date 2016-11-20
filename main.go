@@ -6,7 +6,10 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
 )
+
+var f, _ = os.OpenFile("AppPostData.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
 
 type apiPostData struct {
 	Lat   string
@@ -15,8 +18,12 @@ type apiPostData struct {
 	Etype string
 }
 
-type test_struct struct {
-	Test string
+func Log(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		forward := req.Header.Get("X-Forwarded-For")
+		log.Printf("%s %s %s \n", forward, req.Method, req.URL)
+		handler.ServeHTTP(res, req)
+	})
 }
 
 func main() {
@@ -25,7 +32,7 @@ func main() {
 	router.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./108-Hackathon-Website/")))).Methods("GET")
 	router.HandleFunc("/api", handleAppPost).Methods("POST")
 	http.Handle("/", router)
-	http.ListenAndServe(":8080", router)
+	http.ListenAndServe(":8080", Log(http.DefaultServeMux))
 }
 
 func handleAppGet(res http.ResponseWriter, req *http.Request) {
@@ -40,9 +47,9 @@ func handleAppPost(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), 400)
 		return
 	}
-	fmt.Println(t)
-	log.Println(t.Lat)
+	str := fmt.Sprintf("%+v \n", t)
+	f.WriteString(str)
 	res.Header().Set("108", "An NP-Incomplete Project")
 	res.WriteHeader(200)
-	fmt.Fprintf(res, t.Lat)
+	fmt.Fprintf(res, str)
 }
