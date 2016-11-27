@@ -66,7 +66,6 @@ func NearestBase(Lat string, Long string) (ID int, Time int) {
 		for _, i := range data.Rows {
 			for _, j := range i.Elements {
 				DValue := j.Duration.Value
-				fmt.Println("ID:%d -> Value:%d", count, DValue)
 				if DValue < Min.Value {
 					Min.Key = count
 					Min.Value = DValue

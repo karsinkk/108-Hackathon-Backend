@@ -88,7 +88,6 @@ func main() {
 	var Items int = 0
 	for _, BData := range BaseLocationDataEncoded {
 		wg.Add(1)
-		fmt.Println(Items)
 		go GetDValue(BData.EncodedData, Items)
 		Items += BData.Items
 	}
