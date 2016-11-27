@@ -76,7 +76,7 @@ func handleAppPost(res http.ResponseWriter, req *http.Request) {
 	ID, Time := NearestBase(t.Lat, t.Long)
 	BaseData := ReadLine(ID)
 	fmt.Println(BaseData)
-	fmt.Printf("Base can be reached in %d mins\n\n", Time/60)
+	fmt.Printf("ID:%d Emergency Services can reach you in %d mins\n\n", ID, Time/60)
 
 	BD := strings.Split(BaseData, ",")
 	BData := BaseLocation{District: BD[0], Locality: BD[1], Lat: BD[2], Long: BD[3]}
