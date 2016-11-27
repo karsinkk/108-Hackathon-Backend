@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var f, _ = os.OpenFile("AppPostData.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
@@ -18,12 +20,33 @@ type apiPostData struct {
 	Etype string
 }
 
+type BaseLocation struct {
+	District string
+	Locality string
+	Lat      string
+	Long     string
+}
+
 func Log(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		forward := req.Header.Get("X-Forwarded-For")
 		log.Printf("%s %s %s \n", forward, req.Method, req.URL)
 		handler.ServeHTTP(res, req)
 	})
+}
+
+func ReadLine(lineNum int) (line string) {
+	r, _ := os.Open("Base Location LAT & LONG.csv")
+	lastLine := 0
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		lastLine++
+		if lastLine == lineNum {
+			return sc.Text()
+		}
+	}
+	defer r.Close()
+	return line
 }
 
 func main() {
@@ -48,8 +71,19 @@ func handleAppPost(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	str := fmt.Sprintf("%+v \n", t)
+	fmt.Print(str)
+
+	ID, Time := NearestBase(t.Lat, t.Long)
+	BaseData := ReadLine(ID)
+	fmt.Println(BaseData)
+	fmt.Printf("Base can be reached in %d mins\n\n", Time/60)
+
+	BD := strings.Split(BaseData, ",")
+	BData := BaseLocation{District: BD[0], Locality: BD[1], Lat: BD[2], Long: BD[3]}
+
 	f.WriteString(str)
+
 	res.Header().Set("108", "An NP-Incomplete Project")
 	res.WriteHeader(200)
-	fmt.Fprintf(res, str)
+	json.NewEncoder(res).Encode(BData)
 }
