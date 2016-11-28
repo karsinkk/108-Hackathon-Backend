@@ -30,7 +30,7 @@ type BaseLocation struct {
 func Log(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		forward := req.Header.Get("X-Forwarded-For")
-		log.Printf("%s %s %s \n", forward, req.Method, req.URL)
+		log.Printf("%s %s %s \n\n", forward, req.Method, req.URL)
 		handler.ServeHTTP(res, req)
 	})
 }
