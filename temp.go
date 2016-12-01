@@ -52,6 +52,7 @@ type MIN struct {
 	Value int
 }
 
+var D
 func GetDValue(Base string, count int) {
 
 	defer wg.Done()

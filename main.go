@@ -25,6 +25,7 @@ type BaseLocation struct {
 	Locality string
 	Lat      string
 	Long     string
+	Time     string
 }
 
 func Log(handler http.Handler) http.Handler {
@@ -75,11 +76,11 @@ func handleAppPost(res http.ResponseWriter, req *http.Request) {
 
 	ID, Time := NearestBase(t.Lat, t.Long)
 	BaseData := ReadLine(ID)
-	fmt.Println(BaseData)
+	fmt.Println(BaseData, "Time:", Time)
 	fmt.Printf("ID:%d Emergency Services can reach you in %d mins\n\n", ID, Time/60)
 
 	BD := strings.Split(BaseData, ",")
-	BData := BaseLocation{District: BD[0], Locality: BD[1], Lat: BD[2], Long: BD[3]}
+	BData := BaseLocation{District: BD[0], Locality: BD[1], Lat: BD[2], Long: BD[3], Time: Time / 60}
 
 	f.WriteString(str)
 
