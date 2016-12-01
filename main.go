@@ -26,6 +26,7 @@ type BaseLocation struct {
 	Lat      string
 	Long     string
 	Time     int
+	EType    string
 }
 
 func Log(handler http.Handler) http.Handler {
@@ -50,6 +51,8 @@ func ReadLine(lineNum int) (line string) {
 	return line
 }
 
+var Type = map[string]string{"medical": "Ambulance", "fire": "Fire Engine", "police": "Police Vehicle"}
+
 func main() {
 
 	router := mux.NewRouter()
@@ -62,7 +65,6 @@ func main() {
 func handleAppGet(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("108", "An NP-Incomplete Project")
 	res.WriteHeader(200)
-	fmt.Fprintf(res, "GT Thevdiya")
 }
 func handleAppPost(res http.ResponseWriter, req *http.Request) {
 	var t apiPostData
@@ -80,7 +82,7 @@ func handleAppPost(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("ID:%d Emergency Services can reach you in %d mins\n\n", ID, Time/60)
 
 	BD := strings.Split(BaseData, ",")
-	BData := BaseLocation{District: BD[0], Locality: BD[1], Lat: BD[2], Long: BD[3], Time: Time / 60}
+	BData := BaseLocation{District: BD[0], Locality: BD[1], Lat: BD[2], Long: BD[3], Time: Time / 60, EType: Type[t.Etype]}
 
 	f.WriteString(str)
 
