@@ -75,7 +75,7 @@ func handleAppPost(res http.ResponseWriter, req *http.Request) {
 	fmt.Print(str)
 
 	ID, Time := NearestBase(t.Lat, t.Long)
-	BaseData := ReadLine(ID)
+	BaseData := ReadLine(ID + 1)
 	fmt.Println(BaseData, "Time:", Time)
 	fmt.Printf("ID:%d Emergency Services can reach you in %d mins\n\n", ID, Time/60)
 
