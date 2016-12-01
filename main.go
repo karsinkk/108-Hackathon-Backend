@@ -25,7 +25,7 @@ type BaseLocation struct {
 	Locality string
 	Lat      string
 	Long     string
-	Time     string
+	Time     int
 }
 
 func Log(handler http.Handler) http.Handler {
