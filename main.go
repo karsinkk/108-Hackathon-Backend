@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-var f, _ = os.OpenFile("AppPostData.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
-
 type ApiUserPostData struct {
 	Lat   string
 	Long  string
@@ -28,10 +26,12 @@ type ApiAmbPostData struct {
 }
 
 type BaseLocation struct {
-	Lat  string
-	Long string
-	ID   string
-	Time string
+	District string
+	Locality string
+	Lat      string
+	Long     string
+	Time     int
+	EType    string
 }
 
 func Log(handler http.Handler) http.Handler {
@@ -43,7 +43,7 @@ func Log(handler http.Handler) http.Handler {
 }
 
 func ReadLine(lineNum int) (line string) {
-	r, _ := os.Open("Base Location LAT & LONG.csv")
+	r, _ := os.Open("BaseData.csv")
 	lastLine := 0
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
@@ -59,6 +59,8 @@ func ReadLine(lineNum int) (line string) {
 var EType = map[string]string{"medical": "Ambulance", "fire": "Fire Engine", "police": "Police Vehicle"}
 
 func main() {
+
+	ReadConf()
 
 	router := mux.NewRouter()
 	router.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./108-Hackathon-Website/")))).Methods("GET")
@@ -99,8 +101,6 @@ func handleAppUserPost(res http.ResponseWriter, req *http.Request) {
 
 	BD := strings.Split(BaseData, ",")
 	BData := BaseLocation{District: BD[0], Locality: BD[1], Lat: BD[2], Long: BD[3], Time: Time / 60, EType: EType[u.Etype]}
-
-	f.WriteString(str)
 
 	res.Header().Set("108", "An NP-Incomplete Project")
 	res.WriteHeader(200)
