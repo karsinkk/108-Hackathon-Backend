@@ -1,9 +1,10 @@
 package vehiclecontroller
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"fmt"
-	"github.com/karsinkk/Chiron-Backend/helpers"
+	"github.com/karsinkk/108/dif"
+	"github.com/karsinkk/108/helpers"
 	"net/http"
 )
 
@@ -13,39 +14,35 @@ type Loc struct {
 }
 
 func UpdateVehicle(res http.ResponseWriter, req *http.Request) {
-	var a helpers.AmbUpdateData
-	err := json.NewDecoder(req.Body).Decode(&a)
+
+	DB := dif.ConnectDB()
+	conn, err := helpers.Upgrader.Upgrade(res, req, nil)
 	if err != nil {
-		http.Error(res, err.Error(), 400)
+		fmt.Println(err)
 		return
 	}
-	st := fmt.Sprintf("%+v \n", a)
-	fmt.Print(st)
-	add_query := ""
-	if a.Phone != "" {
-		add_query += ",phone='" + a.Phone + "'"
-	}
-	if a.Driver != "" {
-		add_query += ",driver='" + a.Driver + "'"
-	}
+	go func() {
+		for {
+			var update_data helpers.VehicleUpdateData
+			err := conn.ReadJSON(&update_data)
 
-	Query := fmt.Sprintf("update ambulance set lat='%s', long='%s', time=now()::timestamp,status=%t %s where id=%d", a.Lat, a.Long, a.Status, add_query, a.Id)
-	// fmt.Println(Query)
+			if err != nil {
+				fmt.Println("IN error")
+				fmt.Println(err)
+				conn.Close()
+				return
+			}
 
-	_, _ = helpers.DB.Query(Query)
-	var flag bool
-	loc := Loc{}
-	Query = fmt.Sprintf("select status from ambulance")
-	_ = helpers.DB.QueryRow(Query).Scan(&flag)
-	if flag == false {
-		Query = fmt.Sprintf("select emergency.lat, emergency.long from emergency,ambulance where emergency.ambulance_id=%d", a.Id)
-		_ = helpers.DB.QueryRow(Query).Scan(&loc.Lat, &loc.Long)
-		res.Header().Set("Chiron", "An NP-Incomplete Project")
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		res.WriteHeader(200)
-		str := fmt.Sprintf("%+v \n", a.Id)
-		fmt.Print(str)
-		json.NewEncoder(res).Encode(loc)
-	}
+			str := fmt.Sprintf("%+v", update_data)
+			fmt.Println("In sprintf", str)
+
+			Query := fmt.Sprintf("update vehicle_data set lat='%s',long='%s'where id='%d'", update_data.Lat, update_data.Long, update_data.Id)
+			fmt.Println(Query)
+			_ = DB.QueryRow(Query)
+			Query = fmt.Sprintf("update vehicle_token_data set token='%s' where id='%d'", update_data.Token, update_data.Id)
+			fmt.Println(Query)
+			_ = DB.QueryRow(Query)
+		}
+	}()
 
 }

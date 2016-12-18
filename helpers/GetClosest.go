@@ -10,7 +10,7 @@ import (
 
 var BaseUrl string = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins="
 
-func GetClosest(LatString string, LongString string, Type int, Number int) []VehicleData {
+func GetClosest(LatString string, LongString string, Type int, N int) []VehicleData {
 	Conf := dif.ReadConf()
 	DB := dif.ConnectDB()
 	defer DB.Close()
@@ -19,17 +19,24 @@ func GetClosest(LatString string, LongString string, Type int, Number int) []Veh
 	var Min MIN
 	Min.Value = 1<<31 - 1
 
+	var Number int
+	Number = N/3 + 1
+	if Number > 7 {
+		Number = 7
+	}
+
 	Lat, _ := strconv.ParseFloat(LatString, 64)
 	Long, _ := strconv.ParseFloat(LongString, 64)
-
-	Query := fmt.Sprintf("select base_id,id, lat,long,phone,driver,vehicle_no,SQRT(POW(69.1 * (cast(lat as float) - %f),2)+POW(69.1*(%f - cast(long as float))*COS(cast(lat as float)/57.3),2)) as distance from vehicles where status=true and type=%d order by distance limit %d", Lat, Long, Type, Number+3)
+	fmt.Println(Lat, Long)
+	Query := fmt.Sprintf("select id, lat,long,SQRT(POW(69.1 * (cast(lat as float) - %f),2)+POW(69.1*(%f - cast(long as float))*COS(cast(lat as float)/57.3),2)) as distance from vehicle_data where status=true order by distance limit %d", Lat, Long, Number+3)
+	fmt.Println(Query)
 	rows, _ := DB.Query(Query)
 	defer rows.Close()
 	vehicle := VehicleData{}
 	vehicles := make([]VehicleData, 0)
 	for rows.Next() {
 
-		if err := rows.Scan(&vehicle.Base_Id, &vehicle.Id, &vehicle.Lat, &vehicle.Long, &vehicle.Phone, &vehicle.Driver, &vehicle.Vehicle_no, &vehicle.Distance); err != nil {
+		if err := rows.Scan(&vehicle.Id, &vehicle.Lat, &vehicle.Long, &vehicle.Distance); err != nil {
 			fmt.Println(err)
 		}
 		vehicles = append(vehicles, vehicle)
@@ -41,7 +48,7 @@ func GetClosest(LatString string, LongString string, Type int, Number int) []Veh
 		}
 		vehicledata += fmt.Sprintf("%s,%s", v.Lat, v.Long)
 	}
-	// fmt.Println(vehicledata)
+	fmt.Println(vehicledata)
 	url := fmt.Sprintf("%s%s,%s&destinations=%s&key=%s", BaseUrl, LatString, LongString, vehicledata, Conf.API_KEY)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -62,17 +69,18 @@ func GetClosest(LatString string, LongString string, Type int, Number int) []Veh
 			count++
 		}
 	}
-	// fmt.Println(list)
+	fmt.Println(list)
+	fmt.Println("SOrted")
+
 	new_list := SortMapByValue(list)
-	// fmt.Println("SOrted")
-	// fmt.Println(new_list)
+	fmt.Println(new_list)
 
 	vehicles_return := make([]VehicleData, 0)
 	for _, v := range new_list {
 		vehicles[v.Key].Time = v.Value
 		vehicles_return = append(vehicles_return, vehicles[v.Key])
 	}
-	// str := fmt.Sprintf("%+v", vehicles_return)
-	// fmt.Println(str)
+	str := fmt.Sprintf("%+v", vehicles_return)
+	fmt.Println(str)
 	return vehicles_return[0:Number]
 }

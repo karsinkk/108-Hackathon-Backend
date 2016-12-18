@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/karsinkk/108/dif"
+
 	"net/http"
 )
 
-func RegisterUser(data AdminRegisterData) (string, string, int, http.Header) {
-	DB := dif.ConnectDB()
-	values := fmt.Sprintf(`{"username": "%s", "mobile": "%s", "password": "%s"}`, data.Username, data.Phone, data.Password)
+func RegisterUser(data AdminRegisterData) string {
+
+	values := fmt.Sprintf(`{"username": "%s", "password": "%s"}`, data.Username, data.Username)
 	url := "https://auth.archon40.hasura-app.io/signup"
 	fmt.Println("URL:>", url)
 
@@ -25,22 +25,14 @@ func RegisterUser(data AdminRegisterData) (string, string, int, http.Header) {
 	}
 	defer resp.Body.Close()
 
-	var r SignupData
+	var r HasuraSignupData
 
 	err = json.NewDecoder(resp.Body).Decode(&r)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	auth_token := r.AuthToken[0:6]
 	auth := r.AuthToken[0:]
-	Query := fmt.Sprintf("insert into hospital(name,address,phone,email,auth_token,auth) values('%s','%s','%s','%s','%s','%s')", data.Name, data.Address, data.Phone, data.Username, auth_token, auth)
-	_ = DB.QueryRow(Query)
 
-	Query = fmt.Sprintf("select id from hospital where auth_token='%s'", auth_token)
-	var id int
-	_ = DB.QueryRow(Query).Scan(&id)
-	fmt.Println(resp.Header)
-
-	return auth_token, auth, id, resp.Header
+	return auth
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/karsinkk/Chiron-Backend/helpers"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 func Login(res http.ResponseWriter, req *http.Request) {
@@ -25,6 +27,9 @@ func Login(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Access-Control-Allow-Origin", "*")
 	str = fmt.Sprintf("%+v \n", data)
 	fmt.Print(str)
-	json.NewEncoder(res).Encode(data)
+
+	lol, _ := strconv.ParseInt(strings.Split(r.Username, "adminuser")[1], 10, 64)
+	fmt.Fprint(res, lol)
+	// json.NewEncoder(res).Encode(data)
 
 }

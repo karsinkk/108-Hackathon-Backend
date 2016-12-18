@@ -6,13 +6,15 @@ import (
 )
 
 type Configuration struct {
-	API_KEY  string
-	FCM_KEY  string
-	Host     string
-	Port     string
-	Username string
-	Password string
-	DBname   string
+	API_KEY         string
+	FCM_KEY         string
+	Host            string
+	Port            string
+	Username        string
+	Password        string
+	DBname          string
+	Vehicle_FCM_Key string
+	User_FCM_Key    string
 }
 
 func ReadConf() Configuration {

@@ -1,8 +1,18 @@
 package helpers
 
 import (
+	"github.com/gorilla/websocket"
+	"net/http"
 	"time"
 )
+
+var Upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 type Duration struct {
 	Text  string `json:"text"`
@@ -35,8 +45,23 @@ type MIN struct {
 	Value int
 }
 
-type AmbRegisterToken struct {
-	Auth_Token string
+type LoginData struct {
+	Username string
+	Password string
+}
+type VehicleLoginData struct {
+	Username string
+	Password string
+	Lat      string
+	Long     string
+	Token    string
+}
+
+type VehicleUpdateData struct {
+	Id    int    `json:"Id"`
+	Lat   string `json:"Lat"`
+	Long  string `json:"Long"`
+	Token string `json:"Token"`
 }
 
 type EmergencyUserData struct {
@@ -49,21 +74,31 @@ type EmergencyUserData struct {
 	Number      int
 	Token       string
 }
-
-type Ambulance struct {
-	Hosp_id    int
-	Id         int
-	Lat        string
-	Long       string
-	Phone      string
-	Time       time.Time
-	Status     bool
-	Driver     string
-	Vehicle_no string
-	Distance   float64
+type EmergencyData struct {
+	Id                  int
+	Lat                 string
+	Long                string
+	Phone               string
+	Name                string
+	Status              bool
+	Time                time.Time
+	Type                int
+	Description         int
+	Seen                bool
+	Updated_time        string
+	Updated_description string
+	Dismissed           bool
 }
 
-type AmbulanceWithinRadius struct {
+type Vehicle_Id struct {
+	Id int
+}
+
+type AdminNotificationPostData struct {
+	Id int `json:"Id"`
+}
+
+type VehicleWithinRadius struct {
 	Id       string
 	Lat      string
 	Long     string
@@ -71,8 +106,7 @@ type AmbulanceWithinRadius struct {
 }
 
 type VehicleData struct {
-	Base_Id    int
-	Id         string
+	Id         int
 	Lat        string
 	Long       string
 	Phone      string
@@ -82,24 +116,11 @@ type VehicleData struct {
 	Time       int
 }
 
-type EmergencyData struct {
-	Hosp_id int
-	Amb_id  int
-	Lat     string
-	Long    string
-	Phone   string
-	Name    string
-}
-
 type AdminRegisterData struct {
-	Name     string
 	Username string
-	Phone    string
-	Password string
-	Address  string
 }
 
-type SignupData struct {
+type HasuraSignupData struct {
 	AuthToken   string   `json:"auth_token"`
 	HasuraID    int      `json:"hasura_id"`
 	HasuraRoles []string `json:"hasura_roles"`
@@ -139,21 +160,12 @@ type AmbRegisterData struct {
 	Vehicle_no string
 }
 
-type AmbUpdateData struct {
-	Id     int
-	Lat    string
-	Long   string
-	Phone  string
-	Status bool
-	Driver string
-}
-
 type AdminLoginData struct {
 	Username string
 	Password string
 }
 
-type LoginData struct {
+type HasuraLoginData struct {
 	HasuraRoles []string `json:"hasura_roles"`
 	HasuraID    int      `json:"hasura_id"`
 	AuthToken   string   `json:"auth_token"`
@@ -169,9 +181,86 @@ type Rating struct {
 }
 
 type Notification struct {
-	Amb_id     int
-	Driver     string
+	Eid          int
+	ELat         string
+	ELong        string
+	Phone_1      string
+	Name_1       string
+	Time         time.Time
+	Status       bool
+	Type         int
+	Description  int
+	Seen         bool
+	Updated_time time.Time
+	Vehicle_id   int
+	Time_taken   int
+	District     string
+	Name_2       string
+	Phone_2      string
+	VLat         string
+	VLong        string
+	Driver       string
+	Vehicle_no   string
+}
+
+type StatusData struct {
+	Dispatched          bool
+	Emergency_Id        int
+	User_Id             int
+	Updated_Description string
+}
+
+type VehicleNotificationData struct {
+	Lat                 string
+	Long                string
+	Phone               string
+	Name                string
+	Type                int
+	Updated_Description string
+	Vehicle_Lat         string
+	Vehicle_Long        string
+	Token               string
+}
+type DismissData struct {
+	Vehicle_Id   int
+	Emergency_Id int
+}
+
+type UserNotificationData struct {
+	Lat        string
+	Long       string
+	Time       int
+	Vehicle_No string
+	Phone      string
+	Name       string
+	Token      string
+}
+
+type VehicleAddData struct {
 	Vehicle_no string
+	Driver     string
+	Phone      string
+}
+
+type SeenData struct {
+	Id []int
+}
+
+type Vehicle struct {
+	Id         int
+	District   string
 	Name       string
 	Phone      string
+	Lat        string
+	Long       string
+	Driver     string
+	Vehicle_no string
+	Username   string
+	Status     bool
+	Type       int
+}
+
+type DismissEmergencyData struct {
+	Emergency_Id     int
+	Dismissed_Reason string
 }

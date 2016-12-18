@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/karsinkk/108/dif"
 	"net/http"
 )
 
-func LoginUser(data AdminLoginData) string {
-	DB := dif.ConnectDB()
+func LoginUser(data LoginData) string {
 	values := fmt.Sprintf(`{"username": "%s","password": "%s"}`, data.Username, data.Password)
 	url := "https://auth.archon40.hasura-app.io/login"
 
@@ -24,7 +22,8 @@ func LoginUser(data AdminLoginData) string {
 	}
 	defer resp.Body.Close()
 
-	var r LoginData
+	fmt.Println(resp.Header)
+	var r HasuraLoginData
 
 	err = json.NewDecoder(resp.Body).Decode(&r)
 	if err != nil {
@@ -32,9 +31,6 @@ func LoginUser(data AdminLoginData) string {
 	}
 
 	auth := r.AuthToken[0:]
-	Query := fmt.Sprintf("update hospital set auth='%s' where email='%s'", auth, data.Username)
-	fmt.Println(Query)
-	_ = DB.QueryRow(Query)
 
 	return auth
 }
