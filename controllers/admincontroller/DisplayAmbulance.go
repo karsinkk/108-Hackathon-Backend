@@ -12,6 +12,7 @@ func DisplayAmbulance(res http.ResponseWriter, req *http.Request) {
 
 	DB := dif.ConnectDB()
 	Query := fmt.Sprintf("select * from vehicle_data where type=1")
+	fmt.Println(Query)
 	// conn, err := helpers.Upgrader.Upgrade(res, req, nil)
 	// 	if err != nil {
 	// 		fmt.Println(err)

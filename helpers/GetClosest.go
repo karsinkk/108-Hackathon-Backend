@@ -41,6 +41,7 @@ func GetClosest(LatString string, LongString string, Type int, N int) []VehicleD
 		}
 		vehicles = append(vehicles, vehicle)
 	}
+	fmt.Println(vehicles)
 	vehicledata := ""
 	for k, v := range vehicles {
 		if k > 0 {

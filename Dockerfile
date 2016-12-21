@@ -1,5 +1,5 @@
-FROM scratch
+FROM busybox
 
-COPY /main /app/
+COPY ./main /app/
 
-CMD [“/main”]
+CMD [“/app/main”]
