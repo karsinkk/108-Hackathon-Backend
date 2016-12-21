@@ -3,7 +3,7 @@ package usercontroller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/karsinkk/Chiron-Backend/helpers"
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
 	"net/http"
 )
 
@@ -20,7 +20,7 @@ func SubmitRating(res http.ResponseWriter, req *http.Request) {
 	_, _ = helpers.DB.Query(Query)
 
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	res.Header().Set("Chiron", "An NP-Incomplete Project")
+	res.Header().Set("108", "An NP-Incomplete Project")
 	res.WriteHeader(200)
 
 }

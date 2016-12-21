@@ -19,7 +19,7 @@ func Register(res http.ResponseWriter, req *http.Request) {
 
 	var data helpers.SignUpReturnData
 	// var header map[string][]string
-	res.Header().Set("Chiron", "An NP-Incomplete Project")
+	res.Header().Set("108", "An NP-Incomplete Project")
 	data.Auth_token = helpers.RegisterUser(r)
 
 	res.WriteHeader(200)

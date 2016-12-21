@@ -20,7 +20,7 @@ func Login(res http.ResponseWriter, req *http.Request) {
 	fmt.Print(str)
 
 	var data helpers.LoginReturnData
-	res.Header().Set("Chiron", "An NP-Incomplete Project")
+	res.Header().Set("108", "An NP-Incomplete Project")
 	data.Auth = helpers.LoginUser(r)
 
 	res.WriteHeader(200)
