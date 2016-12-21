@@ -3,7 +3,7 @@ package admincontroller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/karsinkk/Chiron-Backend/helpers"
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
 	"net/http"
 	"strconv"
 	"strings"
