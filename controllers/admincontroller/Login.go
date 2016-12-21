@@ -10,7 +10,7 @@ import (
 )
 
 func Login(res http.ResponseWriter, req *http.Request) {
-	var r helpers.AdminLoginData
+	var r helpers.LoginData
 	err := json.NewDecoder(req.Body).Decode(&r)
 	if err != nil {
 		http.Error(res, err.Error(), 400)

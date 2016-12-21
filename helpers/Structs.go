@@ -160,11 +160,6 @@ type AmbRegisterData struct {
 	Vehicle_no string
 }
 
-type AdminLoginData struct {
-	Username string
-	Password string
-}
-
 type HasuraLoginData struct {
 	HasuraRoles []string `json:"hasura_roles"`
 	HasuraID    int      `json:"hasura_id"`
