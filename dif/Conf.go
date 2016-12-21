@@ -19,7 +19,7 @@ type Configuration struct {
 
 func ReadConf() Configuration {
 	var Conf Configuration
-	file, _ := os.Open("/Users/karsinkk/src/Go/src/github.com/karsinkk/108/dif/conf.json")
+	file, _ := os.Open("/Users/karsinkk/src/Go/src/github.com/karsinkk/108-Hackathon-Backend/dif/conf.json")
 	decoder := json.NewDecoder(file)
 	_ = decoder.Decode(&Conf)
 	return Conf

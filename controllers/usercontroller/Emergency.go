@@ -3,7 +3,7 @@ package usercontroller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/karsinkk/108/helpers"
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
 	"net/http"
 )
 

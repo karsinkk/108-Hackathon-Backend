@@ -3,8 +3,8 @@ package admincontroller
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/karsinkk/108/dif"
-	"github.com/karsinkk/108/helpers"
+	"github.com/karsinkk/108-Hackathon-Backend/dif"
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
 	"net/http"
 	"time"
 )

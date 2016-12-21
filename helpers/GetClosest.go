@@ -3,7 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/karsinkk/108/dif"
+	"github.com/karsinkk/108-Hackathon-Backend/dif"
 	"net/http"
 	"strconv"
 )

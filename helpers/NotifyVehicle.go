@@ -2,7 +2,7 @@ package helpers
 
 import (
 	"fmt"
-	"github.com/karsinkk/108/dif"
+	"github.com/karsinkk/108-Hackathon-Backend/dif"
 )
 
 func NotifyVehicle(Emergency_Id int, User_Id int) {

@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
-	"github.com/karsinkk/108/controllers/admincontroller"
-	"github.com/karsinkk/108/controllers/usercontroller"
-	"github.com/karsinkk/108/controllers/vehiclecontroller"
+	"github.com/karsinkk/108-Hackathon-Backend/controllers/admincontroller"
+	"github.com/karsinkk/108-Hackathon-Backend/controllers/usercontroller"
+	"github.com/karsinkk/108-Hackathon-Backend/controllers/vehiclecontroller"
 )
 
 func main() {
