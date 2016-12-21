@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func Dismiss(res http.ResponseWriter, req *http.Request) {
+func DismissVehicle(res http.ResponseWriter, req *http.Request) {
 	DB := dif.ConnectDB()
 	var r helpers.DismissData
 	err := json.NewDecoder(req.Body).Decode(&r)

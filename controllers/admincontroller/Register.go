@@ -18,17 +18,17 @@ func Register(res http.ResponseWriter, req *http.Request) {
 	fmt.Print(str)
 
 	var data helpers.SignUpReturnData
-	var header map[string][]string
+	// var header map[string][]string
 	res.Header().Set("Chiron", "An NP-Incomplete Project")
-	data.Auth_token, data.Auth, data.Id, header = helpers.RegisterUser(r)
+	data.Auth_token = helpers.RegisterUser(r)
 
 	res.WriteHeader(200)
-	for i, j := range header {
-		for _, l := range j {
-			fmt.Println(i, l)
-			res.Header().Set(i, l)
-		}
-	}
+	// for i, j := range header {
+	// 	for _, l := range j {
+	// 		fmt.Println(i, l)
+	// 		res.Header().Set(i, l)
+	// 	}
+	// }
 	res.Header().Set("Access-Control-Allow-Origin", "*")
 	str = fmt.Sprintf("%+v \n", data)
 	fmt.Print(str)

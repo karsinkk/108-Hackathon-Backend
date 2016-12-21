@@ -30,7 +30,7 @@ func main() {
 	AdminAppRouter.HandleFunc("/emergencycount", admincontroller.CountEmergency)
 	AdminAppRouter.HandleFunc("/status", admincontroller.Status).Methods("POST")
 	AdminAppRouter.HandleFunc("/dismiss", admincontroller.DismissEmergency).Methods("POST")
-	AdminAppRouter.HandleFunc("/dismissemergency", admincontroller.Dismiss).Methods("POST")
+	AdminAppRouter.HandleFunc("/dismissvehicle", admincontroller.DismissVehicle).Methods("POST")
 	AdminAppRouter.HandleFunc("/ambulance", admincontroller.DisplayAmbulance)
 	AdminAppRouter.HandleFunc("/firepolice", admincontroller.DisplayFirePolice)
 
