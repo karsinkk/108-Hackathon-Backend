@@ -17,11 +17,13 @@ func DismissEmergency(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	Query := fmt.Sprintf("update emergency set status=false,dismissed=true,updated_description='%s' where id='%d'", r.Emergency_Id, r.Dismissed_Reason)
+	fmt.Println(Query)
 	_, erro := DB.Query(Query)
 	if err != nil {
 		fmt.Println(erro)
 	}
 	Query = fmt.Sprintf("delete from dispatched_vehicles where emergency_id='%d'", r.Emergency_Id)
+	fmt.Println(Query)
 	_, erro = DB.Query(Query)
 	if err != nil {
 		fmt.Println(erro)
