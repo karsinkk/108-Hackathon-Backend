@@ -20,7 +20,7 @@ func main() {
 	var id int
 	ids := make([]int, 0)
 	for rows.Next() {
-		_ := rows.Scan(&id)
+		_ = rows.Scan(&id)
 		ids = append(ids, id)
 	}
 

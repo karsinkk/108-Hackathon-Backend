@@ -1,5 +1,5 @@
 FROM busybox
 
-COPY ./main /app/
+COPY ./main /home/
 
-CMD [“/app/main”]
+CMD ["/home/main"]

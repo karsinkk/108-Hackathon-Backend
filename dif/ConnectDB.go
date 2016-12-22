@@ -8,7 +8,7 @@ import (
 
 func ConnectDB() *sql.DB {
 	Conf := ReadConf()
-	PsqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"dbname=%s sslmode=disable", Conf.Host, Conf.Port, Conf.Username, Conf.DBname)
+	PsqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", Conf.Host, Conf.Port, Conf.Username, Conf.Password, Conf.DBname)
 	DB, _ := sql.Open("postgres", PsqlInfo)
 	return DB
 }

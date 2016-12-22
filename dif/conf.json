@@ -1,11 +1,11 @@
 {
 	"API_KEY":"AIzaSyCy-cCGCwE2qhtthSxAXMY71Z9Di7r2t2Y",
 	"FCM_KEY":"AIzaSyBB3UjnWoDSJUtQrSbfKoNHOVnqHUs66pw",
-	"Host":"localhost",
+	"Host":"postgres",
 	"Port":"5432",
-	"Username":"postgres",
-	"Password":" ",
-	"DBname":"dev",
+	"Username":"admin",
+	"Password":"brook-charleroi-jingoism",
+	"DBname":"hasuradb",
 	"Vehicle_FCM_Key":"AAAA7DlVkYM:APA91bHKHByqubNNJJuKJkbbJPQIZfKrsIoSRZA6gsynv_3MVQtdeq9rftTzlY6zZAkeLSMb00bMUE5hXzTR4PnpqabYfG2D73IVaLthUDWqRYpzAmbG7MisarP35Mashb1wXBEXH2Tue-ai5ybcC9VAj2kH-6RLKw",
 "User_FCM_Key":"AAAA7DlVkYM:APA91bHKHByqubNNJJuKJkbbJPQIZfKrsIoSRZA6gsynv_3MVQtdeq9rftTzlY6zZAkeLSMb00bMUE5hXzTR4PnpqabYfG2D73IVaLthUDWqRYpzAmbG7MisarP35Mashb1wXBEXH2Tue-ai5ybcC9VAj2kH-6RLKw"
 }
