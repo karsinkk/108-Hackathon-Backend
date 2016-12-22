@@ -16,7 +16,7 @@ func DismissEmergency(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), 400)
 		return
 	}
-	Query := fmt.Sprintf("update emergency set status=false,dismissed=true,updated_description='%s' where id='%d'", r.Emergency_Id, r.Dismissed_Reason)
+	Query := fmt.Sprintf("update emergency set status=false,dismissed=true,updated_description='%s' where id='%d'", r.Dismissed_Reason, r.Emergency_Id)
 	fmt.Println(Query)
 	_, erro := DB.Query(Query)
 	if err != nil {
