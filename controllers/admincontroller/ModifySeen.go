@@ -2,32 +2,56 @@ package admincontroller
 
 import (
 	"encoding/json"
-	"fmt"
+	"net/http"
+
 	"github.com/karsinkk/108-Hackathon-Backend/dif"
 	"github.com/karsinkk/108-Hackathon-Backend/helpers"
-	"net/http"
+	"github.com/lib/pq"
+	"github.com/rs/zerolog/log"
 )
 
+// ModifySeen marks emergencies as seen
 func ModifySeen(res http.ResponseWriter, req *http.Request) {
-	DB := dif.ConnectDB()
+	DB := dif.GetDB()
+
 	var u helpers.SeenData
-	err := json.NewDecoder(req.Body).Decode(&u)
-	if err != nil {
-		http.Error(res, err.Error(), 400)
+	if err := json.NewDecoder(req.Body).Decode(&u); err != nil {
+		log.Error().Err(err).Msg("Failed to decode modify seen request")
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	str := fmt.Sprintf("%+v \n", u)
-	fmt.Print(str)
-	if len(u.Id) > 0 {
-		s := fmt.Sprintf("%d", u.Id[0])
-		for _, v := range u.Id {
-			s += fmt.Sprintf(",%d", v)
-		}
-		Query := fmt.Sprintf("update emergency set seen=true where id in(%s)", s)
-		fmt.Println(Query)
-		_ = DB.QueryRow(Query)
+
+	if len(u.Id) == 0 {
+		res.Header().Set("Content-Type", "application/json")
+		res.Header().Set("108", "An NP-Incomplete Project")
+		res.WriteHeader(http.StatusOK)
+		json.NewEncoder(res).Encode(map[string]interface{}{
+			"success": true,
+			"message": "No IDs to update",
+		})
+		return
 	}
+
+	log.Debug().Ints("emergency_ids", u.Id).Msg("Marking emergencies as seen")
+
+	// Use parameterized query with array
+	_, err := DB.Exec(
+		`UPDATE emergency SET seen = true WHERE id = ANY($1)`,
+		pq.Array(u.Id),
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to update emergency seen status")
+		http.Error(res, "Failed to update status", http.StatusInternalServerError)
+		return
+	}
+
+	log.Info().Ints("emergency_ids", u.Id).Msg("Emergencies marked as seen")
+
+	res.Header().Set("Content-Type", "application/json")
 	res.Header().Set("108", "An NP-Incomplete Project")
-	res.Header().Set("Access-Control-Allow-Origin", "*")
-	res.WriteHeader(200)
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(map[string]interface{}{
+		"success": true,
+		"updated": len(u.Id),
+	})
 }

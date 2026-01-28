@@ -1,32 +1,60 @@
 package helpers
 
 import (
-	"fmt"
 	"github.com/karsinkk/108-Hackathon-Backend/dif"
+	"github.com/rs/zerolog/log"
 )
 
-func AddEmergency(vehicles_data []VehicleData, u EmergencyUserData) {
+// AddEmergency creates a new emergency record and dispatches vehicles
+func AddEmergency(vehiclesData []VehicleData, u EmergencyUserData) error {
+	DB := dif.GetDB()
 
-	DB := dif.ConnectDB()
-	defer DB.Close()
+	// Insert emergency using parameterized query
+	var emergencyID int
+	err := DB.QueryRow(
+		`INSERT INTO emergency(lat, long, name, phone, type, description)
+		 VALUES($1, $2, $3, $4, $5, $6)
+		 RETURNING id`,
+		u.Lat, u.Long, u.Name, u.Phone, u.Type, u.Description,
+	).Scan(&emergencyID)
 
-	Query := fmt.Sprintf("insert into emergency(lat,long,name,phone,type,description) values('%s','%s','%s','%s','%d','%d')", u.Lat, u.Long, u.Name, u.Phone, u.Type, u.Description)
-	fmt.Println(Query)
-	_ = DB.QueryRow(Query)
-	Query = fmt.Sprintf("select id from emergency order by time  desc limit 1")
-	fmt.Println(Query)
-	var Id int
-	row := DB.QueryRow(Query)
-	_ = row.Scan(&Id)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to insert emergency")
+		return err
+	}
+
+	log.Info().Int("emergency_id", emergencyID).Msg("Emergency created")
+
+	// Dispatch vehicles for ambulance emergencies (Type 1)
 	if u.Type == 1 {
-		for _, v := range vehicles_data {
-			Query = fmt.Sprintf("insert into dispatched_vehicles(emergency_id,vehicle_id,time_taken,distance) values('%d','%d','%d','%f')", Id, v.Id, v.Time, v.Distance)
-			fmt.Println(Query)
-			_ = DB.QueryRow(Query)
+		for _, v := range vehiclesData {
+			_, err := DB.Exec(
+				`INSERT INTO dispatched_vehicles(emergency_id, vehicle_id, time_taken, distance)
+				 VALUES($1, $2, $3, $4)`,
+				emergencyID, v.Id, v.Time, v.Distance,
+			)
+			if err != nil {
+				log.Error().
+					Err(err).
+					Int("emergency_id", emergencyID).
+					Int("vehicle_id", v.Id).
+					Msg("Failed to dispatch vehicle")
+			}
 		}
 	}
-	Query = fmt.Sprintf("insert into emergency_token_data(emergency_id,token) values('%d','%s')", Id, u.Token)
-	fmt.Println(Query)
-	_ = DB.QueryRow(Query)
 
+	// Store emergency token
+	_, err = DB.Exec(
+		`INSERT INTO emergency_token_data(emergency_id, token) VALUES($1, $2)`,
+		emergencyID, u.Token,
+	)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Int("emergency_id", emergencyID).
+			Msg("Failed to store emergency token")
+		return err
+	}
+
+	return nil
 }

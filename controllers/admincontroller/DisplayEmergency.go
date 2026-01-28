@@ -1,52 +1,88 @@
 package admincontroller
 
 import (
-	"fmt"
-	"github.com/karsinkk/108-Hackathon-Backend/dif"
-	"github.com/karsinkk/108-Hackathon-Backend/helpers"
+	"context"
 	"net/http"
 	"time"
+
+	"github.com/karsinkk/108-Hackathon-Backend/dif"
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
+	"github.com/rs/zerolog/log"
 )
 
+// DisplayEmergency handles WebSocket connections for emergency data streaming
 func DisplayEmergency(res http.ResponseWriter, req *http.Request) {
-	var err error
-	DB := dif.ConnectDB()
-	Query := fmt.Sprintf("select * from emergency")
-	conn, err := helpers.Upgrader.Upgrade(res, req, nil)
+	upgrader := helpers.GetUpgrader()
+	conn, err := upgrader.Upgrade(res, req, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("Failed to upgrade WebSocket connection")
+		return
+	}
+	defer conn.Close()
+
+	DB := dif.GetDB()
+
+	// Send initial data
+	emergencies := queryEmergencies(DB)
+	if err := conn.WriteJSON(emergencies); err != nil {
+		log.Error().Err(err).Msg("Failed to write emergencies to WebSocket")
 		return
 	}
 
-	rows, _ := DB.Query(Query)
-	defer rows.Close()
-	data := helpers.EmergencyData{}
-	datas := make([]helpers.EmergencyData, 0)
-	for rows.Next() {
+	ctx, cancel := context.WithCancel(req.Context())
+	defer cancel()
 
-		if err := rows.Scan(&data.Id, &data.Lat, &data.Long, &data.Phone, &data.Name, &data.Status, &data.Time, &data.Type, &data.Description, &data.Seen, &data.Updated_time, &data.Updated_description, &data.Dismissed); err != nil {
-			fmt.Println(err)
-		}
-		datas = append(datas, data)
-	}
-	conn.WriteJSON(datas)
-	go func() {
-		ticker1 := time.NewTicker(time.Millisecond * 30000)
-		for _ = range ticker1.C {
-			rows, _ = DB.Query(Query)
-			defer rows.Close()
-			data = helpers.EmergencyData{}
-			datas = make([]helpers.EmergencyData, 0)
-			for rows.Next() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 
-				if err = rows.Scan(&data.Id, &data.Lat, &data.Long, &data.Phone, &data.Name, &data.Status, &data.Time, &data.Type, &data.Description, &data.Seen, &data.Updated_time, &data.Updated_description, &data.Dismissed); err != nil {
-					fmt.Println(err)
-				}
-				datas = append(datas, data)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug().Msg("Emergency display WebSocket connection closed")
+			return
+		case <-ticker.C:
+			emergencies := queryEmergencies(DB)
+			if err := conn.WriteJSON(emergencies); err != nil {
+				log.Error().Err(err).Msg("Failed to write emergencies to WebSocket")
+				return
 			}
-			conn.WriteJSON(datas)
-
 		}
-	}()
+	}
+}
 
+// queryEmergencies fetches all emergency data from the database
+func queryEmergencies(DB interface {
+	Query(query string, args ...interface{}) (interface {
+		Close() error
+		Next() bool
+		Scan(dest ...interface{}) error
+		Err() error
+	}, error)
+}) []helpers.EmergencyData {
+	rows, err := dif.GetDB().Query(`SELECT * FROM emergency`)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to query emergencies")
+		return []helpers.EmergencyData{}
+	}
+	defer rows.Close()
+
+	emergencies := make([]helpers.EmergencyData, 0)
+	for rows.Next() {
+		var e helpers.EmergencyData
+		if err := rows.Scan(
+			&e.Id, &e.Lat, &e.Long, &e.Phone, &e.Name,
+			&e.Status, &e.Time, &e.Type, &e.Description,
+			&e.Seen, &e.Updated_time, &e.Updated_description, &e.Dismissed,
+		); err != nil {
+			log.Error().Err(err).Msg("Failed to scan emergency row")
+			continue
+		}
+		emergencies = append(emergencies, e)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Msg("Error iterating emergency rows")
+	}
+
+	return emergencies
 }

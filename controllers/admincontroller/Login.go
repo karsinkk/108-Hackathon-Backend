@@ -2,34 +2,50 @@ package admincontroller
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/karsinkk/108-Hackathon-Backend/helpers"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
+	"github.com/rs/zerolog/log"
 )
 
+// Login handles admin user authentication
 func Login(res http.ResponseWriter, req *http.Request) {
 	var r helpers.LoginData
-	err := json.NewDecoder(req.Body).Decode(&r)
-	if err != nil {
-		http.Error(res, err.Error(), 400)
+	if err := json.NewDecoder(req.Body).Decode(&r); err != nil {
+		log.Error().Err(err).Msg("Failed to decode login request")
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	str := fmt.Sprintf("%+v \n", r)
-	fmt.Print(str)
+
+	log.Debug().Str("username", r.Username).Msg("Admin login attempt")
 
 	var data helpers.LoginReturnData
-	res.Header().Set("108", "An NP-Incomplete Project")
 	data.Auth = helpers.LoginUser(r)
 
-	res.WriteHeader(200)
-	res.Header().Set("Access-Control-Allow-Origin", "*")
-	str = fmt.Sprintf("%+v \n", data)
-	fmt.Print(str)
+	if data.Auth == "" {
+		log.Warn().Str("username", r.Username).Msg("Login failed - invalid credentials")
+		http.Error(res, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
 
-	lol, _ := strconv.ParseInt(strings.Split(r.Username, "adminuser")[1], 10, 64)
-	fmt.Fprint(res, lol)
-	// json.NewEncoder(res).Encode(data)
+	// Extract admin user ID from username
+	var adminID int64
+	if strings.Contains(r.Username, "adminuser") {
+		parts := strings.Split(r.Username, "adminuser")
+		if len(parts) > 1 {
+			adminID, _ = strconv.ParseInt(parts[1], 10, 64)
+		}
+	}
 
+	log.Info().Str("username", r.Username).Int64("admin_id", adminID).Msg("Admin logged in successfully")
+
+	res.Header().Set("Content-Type", "application/json")
+	res.Header().Set("108", "An NP-Incomplete Project")
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(map[string]interface{}{
+		"auth":     data.Auth,
+		"admin_id": adminID,
+	})
 }

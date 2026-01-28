@@ -3,39 +3,79 @@ package admincontroller
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/karsinkk/108-Hackathon-Backend/dif"
 	"github.com/karsinkk/108-Hackathon-Backend/helpers"
-	"net/http"
+	"github.com/rs/zerolog/log"
 )
 
+// AddVehicle handles adding a new vehicle to the system
 func AddVehicle(res http.ResponseWriter, req *http.Request) {
-	DB := dif.ConnectDB()
+	DB := dif.GetDB()
+
 	var r helpers.VehicleAddData
-	err := json.NewDecoder(req.Body).Decode(&r)
-	if err != nil {
-		http.Error(res, err.Error(), 400)
+	if err := json.NewDecoder(req.Body).Decode(&r); err != nil {
+		log.Error().Err(err).Msg("Failed to decode add vehicle request")
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	str := fmt.Sprintf("%+v \n", r)
-	fmt.Print(str)
 
-	Query := fmt.Sprintf("insert into vehicle_data(vehicle_no,driver,phone,type) values('%s','%s','%s','1')", r.Vehicle_no, r.Driver, r.Phone)
-	_ = DB.QueryRow(Query)
+	log.Debug().
+		Str("vehicle_no", r.Vehicle_no).
+		Str("driver", r.Driver).
+		Msg("Adding new vehicle")
 
-	var Id int
-	Query = fmt.Sprintf("select id from vehicle_data where vehicle_no='%s'", r.Vehicle_no)
-	row := DB.QueryRow(Query)
-	_ = row.Scan(&Id)
+	// Insert vehicle using parameterized query
+	var id int
+	err := DB.QueryRow(
+		`INSERT INTO vehicle_data(vehicle_no, driver, phone, type)
+		 VALUES($1, $2, $3, 1)
+		 RETURNING id`,
+		r.Vehicle_no, r.Driver, r.Phone,
+	).Scan(&id)
 
-	username := fmt.Sprintf("vehicle%d", Id)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to insert vehicle")
+		http.Error(res, "Failed to add vehicle", http.StatusInternalServerError)
+		return
+	}
 
-	Query = fmt.Sprintf("insert into vehicle_data(username) values('%s') where id='%d'", username, Id)
-	_ = DB.QueryRow(Query)
+	// Generate username based on vehicle ID
+	username := fmt.Sprintf("vehicle%d", id)
+
+	// Update vehicle with username
+	_, err = DB.Exec(
+		`UPDATE vehicle_data SET username = $1 WHERE id = $2`,
+		username, id,
+	)
+	if err != nil {
+		log.Error().Err(err).Int("vehicle_id", id).Msg("Failed to update vehicle username")
+	}
+
+	// Insert token record
+	_, err = DB.Exec(
+		`INSERT INTO vehicle_token_data(vehicle_id, token) VALUES($1, '')`,
+		id,
+	)
+	if err != nil {
+		log.Error().Err(err).Int("vehicle_id", id).Msg("Failed to create vehicle token record")
+	}
+
+	// Register user in auth system
 	data := helpers.AdminRegisterData{Username: username}
-	_ = helpers.RegisterUser(data)
-	res.Header().Set("108", "An NP-Incomplete Project")
-	res.Header().Set("Access-Control-Allow-Origin", "*")
-	res.WriteHeader(200)
-	fmt.Fprint(res, username)
+	helpers.RegisterUser(data)
 
+	log.Info().
+		Int("vehicle_id", id).
+		Str("username", username).
+		Msg("Vehicle added successfully")
+
+	res.Header().Set("Content-Type", "application/json")
+	res.Header().Set("108", "An NP-Incomplete Project")
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(map[string]interface{}{
+		"id":       id,
+		"username": username,
+	})
 }

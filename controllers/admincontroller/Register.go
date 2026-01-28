@@ -2,36 +2,36 @@ package admincontroller
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/karsinkk/108-Hackathon-Backend/helpers"
 	"net/http"
+
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
+	"github.com/rs/zerolog/log"
 )
 
+// Register handles admin user registration
 func Register(res http.ResponseWriter, req *http.Request) {
 	var r helpers.AdminRegisterData
-	err := json.NewDecoder(req.Body).Decode(&r)
-	if err != nil {
-		http.Error(res, err.Error(), 400)
+	if err := json.NewDecoder(req.Body).Decode(&r); err != nil {
+		log.Error().Err(err).Msg("Failed to decode register request")
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	str := fmt.Sprintf("%+v \n", r)
-	fmt.Print(str)
+
+	log.Debug().Str("username", r.Username).Msg("Registering new admin user")
 
 	var data helpers.SignUpReturnData
-	// var header map[string][]string
-	res.Header().Set("108", "An NP-Incomplete Project")
 	data.Auth_token = helpers.RegisterUser(r)
 
-	res.WriteHeader(200)
-	// for i, j := range header {
-	// 	for _, l := range j {
-	// 		fmt.Println(i, l)
-	// 		res.Header().Set(i, l)
-	// 	}
-	// }
-	res.Header().Set("Access-Control-Allow-Origin", "*")
-	str = fmt.Sprintf("%+v \n", data)
-	fmt.Print(str)
-	json.NewEncoder(res).Encode(data)
+	if data.Auth_token == "" {
+		log.Warn().Str("username", r.Username).Msg("Registration failed")
+		http.Error(res, "Registration failed", http.StatusInternalServerError)
+		return
+	}
 
+	log.Info().Str("username", r.Username).Msg("Admin user registered successfully")
+
+	res.Header().Set("Content-Type", "application/json")
+	res.Header().Set("108", "An NP-Incomplete Project")
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(data)
 }
