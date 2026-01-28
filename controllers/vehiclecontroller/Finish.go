@@ -2,30 +2,66 @@ package vehiclecontroller
 
 import (
 	"encoding/json"
-	"fmt"
+	"net/http"
+
 	"github.com/karsinkk/108-Hackathon-Backend/dif"
 	"github.com/karsinkk/108-Hackathon-Backend/helpers"
-	"net/http"
+	"github.com/rs/zerolog/log"
 )
 
+// Finish handles completing an emergency response
 func Finish(res http.ResponseWriter, req *http.Request) {
-	DB := dif.ConnectDB()
-	defer DB.Close()
+	DB := dif.GetDB()
 
 	var a helpers.Vehicle_Id
-	_ = json.NewDecoder(req.Body).Decode(&a)
-	str := fmt.Sprintf("%+v \n", a)
-	fmt.Print(str)
-	var E_Id int
-	Query := fmt.Sprintf("select emergency_id from dispatched_vehicles where vehicle_id='%d", a.Id)
-	row := DB.QueryRow(Query)
-	_ = row.Scan(&E_Id)
+	if err := json.NewDecoder(req.Body).Decode(&a); err != nil {
+		log.Error().Err(err).Msg("Failed to decode finish request")
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	Query = fmt.Sprintf("update emergency set status=false where id='%d'", E_Id)
-	_ = DB.QueryRow(Query)
+	log.Debug().Int("vehicle_id", a.Id).Msg("Vehicle finishing emergency")
 
-	Query = fmt.Sprintf("update vehicle_data set status=true where id='%d'", a.Id)
-	_ = DB.QueryRow(Query)
+	// Get emergency ID for this vehicle using parameterized query
+	var emergencyID int
+	err := DB.QueryRow(
+		`SELECT emergency_id FROM dispatched_vehicles WHERE vehicle_id = $1`,
+		a.Id,
+	).Scan(&emergencyID)
+	if err != nil {
+		log.Error().Err(err).Int("vehicle_id", a.Id).Msg("Failed to get emergency ID")
+		http.Error(res, "Failed to find emergency", http.StatusNotFound)
+		return
+	}
 
-	fmt.Fprint(res, E_Id)
+	// Update emergency status
+	_, err = DB.Exec(
+		`UPDATE emergency SET status = false WHERE id = $1`,
+		emergencyID,
+	)
+	if err != nil {
+		log.Error().Err(err).Int("emergency_id", emergencyID).Msg("Failed to update emergency status")
+	}
+
+	// Make vehicle available again
+	_, err = DB.Exec(
+		`UPDATE vehicle_data SET status = true WHERE id = $1`,
+		a.Id,
+	)
+	if err != nil {
+		log.Error().Err(err).Int("vehicle_id", a.Id).Msg("Failed to update vehicle status")
+	}
+
+	log.Info().
+		Int("vehicle_id", a.Id).
+		Int("emergency_id", emergencyID).
+		Msg("Emergency completed")
+
+	res.Header().Set("Content-Type", "application/json")
+	res.Header().Set("108", "An NP-Incomplete Project")
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(map[string]interface{}{
+		"success":      true,
+		"emergency_id": emergencyID,
+	})
 }

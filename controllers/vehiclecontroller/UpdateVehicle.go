@@ -1,48 +1,67 @@
 package vehiclecontroller
 
 import (
-	// "encoding/json"
-	"fmt"
+	"context"
+	"net/http"
+
 	"github.com/karsinkk/108-Hackathon-Backend/dif"
 	"github.com/karsinkk/108-Hackathon-Backend/helpers"
-	"net/http"
+	"github.com/rs/zerolog/log"
 )
 
-type Loc struct {
-	Lat  string
-	Long string
-}
-
+// UpdateVehicle handles WebSocket connections for real-time vehicle location updates
 func UpdateVehicle(res http.ResponseWriter, req *http.Request) {
-
-	DB := dif.ConnectDB()
-	conn, err := helpers.Upgrader.Upgrade(res, req, nil)
+	upgrader := helpers.GetUpgrader()
+	conn, err := upgrader.Upgrade(res, req, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("Failed to upgrade WebSocket connection for vehicle update")
 		return
 	}
+
+	DB := dif.GetDB()
+
+	ctx, cancel := context.WithCancel(req.Context())
+
 	go func() {
+		defer cancel()
+		defer conn.Close()
+
 		for {
-			var update_data helpers.VehicleUpdateData
-			err := conn.ReadJSON(&update_data)
-
-			if err != nil {
-				fmt.Println("IN error")
-				fmt.Println(err)
-				conn.Close()
+			select {
+			case <-ctx.Done():
+				log.Debug().Msg("Vehicle update WebSocket connection closed")
 				return
+			default:
+				var updateData helpers.VehicleUpdateData
+				if err := conn.ReadJSON(&updateData); err != nil {
+					log.Debug().Err(err).Msg("WebSocket read error, closing connection")
+					return
+				}
+
+				log.Debug().
+					Int("vehicle_id", updateData.Id).
+					Str("lat", updateData.Lat).
+					Str("long", updateData.Long).
+					Msg("Updating vehicle location")
+
+				// Update vehicle location using parameterized query
+				_, err := DB.Exec(
+					`UPDATE vehicle_data SET lat = $1, long = $2 WHERE id = $3`,
+					updateData.Lat, updateData.Long, updateData.Id,
+				)
+				if err != nil {
+					log.Error().Err(err).Int("vehicle_id", updateData.Id).Msg("Failed to update vehicle location")
+				}
+
+				// Update vehicle token using parameterized query
+				_, err = DB.Exec(
+					`UPDATE vehicle_token_data SET token = $1 WHERE vehicle_id = $2`,
+					updateData.Token, updateData.Id,
+				)
+				if err != nil {
+					log.Error().Err(err).Int("vehicle_id", updateData.Id).Msg("Failed to update vehicle token")
+				}
 			}
-
-			str := fmt.Sprintf("%+v", update_data)
-			fmt.Println("In sprintf", str)
-
-			Query := fmt.Sprintf("update vehicle_data set lat='%s',long='%s'where id='%d'", update_data.Lat, update_data.Long, update_data.Id)
-			fmt.Println(Query)
-			_ = DB.QueryRow(Query)
-			Query = fmt.Sprintf("update vehicle_token_data set token='%s' where id='%d'", update_data.Token, update_data.Id)
-			fmt.Println(Query)
-			_ = DB.QueryRow(Query)
 		}
 	}()
-
 }

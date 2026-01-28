@@ -1,38 +1,70 @@
 package admincontroller
 
 import (
-	"fmt"
-	"github.com/karsinkk/108-Hackathon-Backend/dif"
-	"github.com/karsinkk/108-Hackathon-Backend/helpers"
+	"context"
 	"net/http"
 	"time"
+
+	"github.com/karsinkk/108-Hackathon-Backend/dif"
+	"github.com/karsinkk/108-Hackathon-Backend/helpers"
+	"github.com/rs/zerolog/log"
 )
 
+// Count represents the emergency count response
 type Count struct {
-	Id int
+	Id int `json:"id"`
 }
 
+// CountEmergency handles WebSocket connections for emergency count updates
 func CountEmergency(res http.ResponseWriter, req *http.Request) {
-
-	conn, err := helpers.Upgrader.Upgrade(res, req, nil)
+	upgrader := helpers.GetUpgrader()
+	conn, err := upgrader.Upgrade(res, req, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("Failed to upgrade WebSocket connection")
 		return
 	}
-	DB := dif.ConnectDB()
-	Query := fmt.Sprintf("select count(id) from emergency where seen=false")
-	count_data := Count{}
-	row := DB.QueryRow(Query)
-	_ = row.Scan(&count_data.Id)
-	conn.WriteJSON(count_data)
-	go func() {
-		ticker1 := time.NewTicker(time.Millisecond * 30000)
-		for _ = range ticker1.C {
-			count_data = Count{}
-			row = DB.QueryRow(Query)
-			_ = row.Scan(&count_data.Id)
-			conn.WriteJSON(count_data)
+	defer conn.Close()
 
+	DB := dif.GetDB()
+
+	// Send initial count
+	var countData Count
+	err = DB.QueryRow(`SELECT COUNT(id) FROM emergency WHERE seen = false`).Scan(&countData.Id)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to query emergency count")
+		return
+	}
+
+	if err := conn.WriteJSON(countData); err != nil {
+		log.Error().Err(err).Msg("Failed to write initial count to WebSocket")
+		return
+	}
+
+	// Create context for cleanup
+	ctx, cancel := context.WithCancel(req.Context())
+	defer cancel()
+
+	// Periodic updates
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug().Msg("Emergency count WebSocket connection closed")
+			return
+		case <-ticker.C:
+			countData = Count{}
+			err := DB.QueryRow(`SELECT COUNT(id) FROM emergency WHERE seen = false`).Scan(&countData.Id)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to query emergency count")
+				continue
+			}
+
+			if err := conn.WriteJSON(countData); err != nil {
+				log.Error().Err(err).Msg("Failed to write count to WebSocket")
+				return
+			}
 		}
-	}()
+	}
 }

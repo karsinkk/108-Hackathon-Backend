@@ -3,34 +3,59 @@ package helpers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
+// AuthRequest represents the authentication request payload
+type AuthRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// LoginUser authenticates a user against the Hasura auth service
 func LoginUser(data LoginData) string {
-	values := fmt.Sprintf(`{"username": "%s","password": "%s"}`, data.Username, data.Password)
+	// Build request using proper JSON marshaling
+	authReq := AuthRequest{
+		Username: data.Username,
+		Password: data.Password,
+	}
+
+	jsonData, err := json.Marshal(authReq)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal login request")
+		return ""
+	}
+
 	url := "https://auth.archon40.hasura-app.io/login"
 
-	var jsonStr = []byte(values)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create login request")
+		return ""
+	}
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to send login request")
+		return ""
 	}
 	defer resp.Body.Close()
 
-	fmt.Println(resp.Header)
 	var r HasuraLoginData
-
-	err = json.NewDecoder(resp.Body).Decode(&r)
-	if err != nil {
-		fmt.Println(err)
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		log.Error().Err(err).Msg("Failed to decode login response")
+		return ""
 	}
 
-	auth := r.AuthToken[0:]
+	if r.AuthToken == "" {
+		log.Warn().Str("username", data.Username).Msg("Login failed - no auth token received")
+		return ""
+	}
 
-	return auth
+	log.Info().Str("username", data.Username).Msg("User logged in successfully")
+	return r.AuthToken
 }

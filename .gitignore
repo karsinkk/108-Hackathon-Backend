@@ -1,4 +1,45 @@
-dif/*.json
-kjakja.go
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 main
+server
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config files with secrets
+dif/*.json
+.env
+*.env.local
+
+# Build artifacts
+dist/
+build/
+
+# Test files
 index.html
+kjakja.go
+
+# Logs
+*.log
+logs/
